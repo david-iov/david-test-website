@@ -1,0 +1,31 @@
+---
+name: Deploy Website to AWS
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy Test Website
+    runs-on: ubuntu-latest
+    env:
+      BUCKET: "david-test-website"
+      REGION: us-east-1
+      CLOUDFRONT_DISTRIBUTION_ID: E27ZCH4616NHMQ
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    
+    - name: Configures AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.REGION }}
+    
+    - name: Copy files to the S3 bucket
+      run: aws s3 sync --delete ./static s3://${{ env.BUCKET }}
+
+    - name: Reload/Invalidate Cloudfront
+      run: aws cloudfront create-invalidation --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
